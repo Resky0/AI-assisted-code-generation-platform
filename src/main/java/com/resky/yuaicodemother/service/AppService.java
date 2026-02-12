@@ -4,7 +4,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.resky.yuaicodemother.model.dto.app.AppQueryRequest;
 import com.resky.yuaicodemother.model.entity.App;
+import com.resky.yuaicodemother.model.entity.User;
 import com.resky.yuaicodemother.model.vo.AppVO;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -14,6 +16,25 @@ import java.util.List;
  * @author resky
  */
 public interface AppService extends IService<App> {
+    /**
+     * 生成代码（流式
+     *
+     * @param appId       应用 ID
+     * @param userMessage 用户提示词
+     * @param loginUser   当前登录用户
+     * @return 生成的代码
+     */
+    Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser);
+
+    /**
+     * 部署应用
+     *
+     * @param appId     应用 ID
+     * @param loginUser 当前登录用户
+     * @return 部署的URL
+     */
+    String deployApp(Long appId, User loginUser);
+
     /**
      * 获取应用信息封装类
      *
@@ -30,5 +51,11 @@ public interface AppService extends IService<App> {
      */
     QueryWrapper getQueryWrapper(AppQueryRequest appQueryRequest);
 
+    /**
+     * 获取封装类列表
+     *
+     * @param appList 应用列表
+     * @return 封装类列表
+     */
     List<AppVO> getAppVOList(List<App> appList);
 }

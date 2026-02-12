@@ -19,16 +19,16 @@ public class CodeFileSaver {
     public static final String FILE_SAVE_ROOT_DIR = System.getProperty("user.dir") + "/tmp/code_output";
 
     // 保存 HtmlCodeResult
-    public static File saveHtmlCodeResult(HtmlCodeResult result) {
-        String baseDirPath = buildUniqueDir(CodeGenTypeEnum.HTML.getValue());
+    public static File saveHtmlCodeResult(HtmlCodeResult result,Long appId) {
+        String baseDirPath = buildUniqueDir(CodeGenTypeEnum.HTML.getValue(),appId);
         writeToFile(baseDirPath, "index.html", result.getHtmlCode());
         return new File(baseDirPath);
     }
 
 
     // 保存 MultiFileCodeResult
-    public static File saveMultiFileCodeResult(MultiFileCodeResult result) {
-        String baseDirPath = buildUniqueDir(CodeGenTypeEnum.MULTI_FILE.getValue());
+    public static File saveMultiFileCodeResult(MultiFileCodeResult result,Long appId) {
+        String baseDirPath = buildUniqueDir(CodeGenTypeEnum.MULTI_FILE.getValue(),appId);
         writeToFile(baseDirPath, "index.html", result.getHtmlCode());
         writeToFile(baseDirPath, "style.css", result.getCssCode());
         writeToFile(baseDirPath, "script.js", result.getJsCode());
@@ -41,8 +41,8 @@ public class CodeFileSaver {
      * @param bizType 生成代码类别
      * @return 目录路径
      */
-    private static String buildUniqueDir(String bizType) {
-        String uniqueDirName = StrUtil.format("{}_{}", bizType, IdUtil.getSnowflakeNextIdStr());
+    private static String buildUniqueDir(String bizType,Long appId) {
+        String uniqueDirName = StrUtil.format("{}_{}", bizType, appId);
         String dirPath = FILE_SAVE_ROOT_DIR + File.separator + uniqueDirName;
         FileUtil.mkdir(dirPath);
         return dirPath;

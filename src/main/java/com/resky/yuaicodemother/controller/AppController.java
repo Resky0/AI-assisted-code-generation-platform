@@ -2,6 +2,7 @@ package com.resky.yuaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.resky.yuaicodemother.annotation.AuthCheck;
@@ -13,10 +14,7 @@ import com.resky.yuaicodemother.constant.UserConstant;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.exception.ThrowUtils;
-import com.resky.yuaicodemother.model.dto.app.AppAddRequest;
-import com.resky.yuaicodemother.model.dto.app.AppAdminUpdateRequest;
-import com.resky.yuaicodemother.model.dto.app.AppQueryRequest;
-import com.resky.yuaicodemother.model.dto.app.AppUpdateRequest;
+import com.resky.yuaicodemother.model.dto.app.*;
 import com.resky.yuaicodemother.model.entity.User;
 import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
 import com.resky.yuaicodemother.model.vo.AppVO;
@@ -24,20 +22,17 @@ import com.resky.yuaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
 import com.resky.yuaicodemother.model.entity.App;
 import com.resky.yuaicodemother.service.AppService;
-import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 应用 控制层。
@@ -84,6 +79,60 @@ public class AppController {
         return ResultUtils.success(app.getId());
     }
 
+    /**
+     * 用户流式生成代码
+     * @param appId   应用 ID
+     * @param message 用户提示词
+     * @param request 请求
+     * @return 生成的代码
+     */
+    @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "用户流式生成代码")
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR, "应用 id 不能为空");
+        ThrowUtils.throwIf(message == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务生成代码（流式）
+        Flux<String> contextFlux = appService.chatToGenCode(appId, message, loginUser);
+        // 转换为 ServerSentEvent格式
+        return contextFlux.map(chunk -> {
+            // 将内容包装成 json对象
+            Map<String, String> wrapper = Map.of("d:", chunk);
+            String jsonData = JSONUtil.toJsonStr(wrapper);
+            return ServerSentEvent.<String>builder()
+                    .data(jsonData)
+                    .build();
+
+        }).concatWith(Mono.just(
+                // 发送结束事件
+                ServerSentEvent.<String>builder()
+                        .event("done")
+                        .data("")
+                        .build()
+        ));
+
+    }
+
+    /**
+     * 应用部署
+     *
+     * @param appDeployRequest 部署请求
+     * @param request          请求
+     * @return 部署 URL
+     */
+    @PostMapping("/deploy")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务部署应用
+        String deployUrl = appService.deployApp(appId, loginUser);
+        return ResultUtils.success(deployUrl);
+    }
 
     /**
      * 删除应用（用户只能删除自己的应用）
