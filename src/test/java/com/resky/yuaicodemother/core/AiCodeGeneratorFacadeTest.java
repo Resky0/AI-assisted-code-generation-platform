@@ -8,8 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.File;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 class AiCodeGeneratorFacadeTest {
 

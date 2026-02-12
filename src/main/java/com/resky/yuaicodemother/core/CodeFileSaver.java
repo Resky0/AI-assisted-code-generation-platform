@@ -1,7 +1,6 @@
 package com.resky.yuaicodemother.core;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.resky.yuaicodemother.ai.model.HtmlCodeResult;
 import com.resky.yuaicodemother.ai.model.MultiFileCodeResult;
