@@ -1,6 +1,7 @@
 package com.resky.yuaicodemother.controller;
 
 import com.resky.yuaicodemother.constant.AppConstant;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import java.io.File;
 
 @RestController
+@Tag(name = "静态资源")
 @RequestMapping("/static")
 public class StaticResourceController {
 

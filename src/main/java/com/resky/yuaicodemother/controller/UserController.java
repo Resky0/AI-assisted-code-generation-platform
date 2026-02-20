@@ -17,6 +17,7 @@ import com.resky.yuaicodemother.model.dto.user.UserUpdateRequest;
 import com.resky.yuaicodemother.model.vo.LoginUserVO;
 import com.resky.yuaicodemother.model.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,6 +36,7 @@ import java.util.List;
  * @author resky
  */
 @RestController
+@Tag(name = "用户接口")
 @RequestMapping("/user")
 public class UserController {
 

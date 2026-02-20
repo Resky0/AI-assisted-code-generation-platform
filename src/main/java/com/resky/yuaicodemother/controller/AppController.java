@@ -20,6 +20,7 @@ import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
 import com.resky.yuaicodemother.model.vo.AppVO;
 import com.resky.yuaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
@@ -40,6 +41,7 @@ import java.util.Map;
  * @author resky
  */
 @RestController
+@Tag(name = "应用接口")
 @RequestMapping("/app")
 public class AppController {
 
@@ -123,6 +125,7 @@ public class AppController {
      * @return 部署 URL
      */
     @PostMapping("/deploy")
+    @Operation(summary = "用户部署应用")
     public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
         Long appId = appDeployRequest.getAppId();

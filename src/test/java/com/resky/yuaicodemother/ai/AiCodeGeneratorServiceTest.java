@@ -35,7 +35,7 @@ class AiCodeGeneratorServiceTest {
 
     @Test
     void generateAndSaveCodeStream() {
-        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream("做个任务记录网站，不超过100行代码", CodeGenTypeEnum.MULTI_FILE);
+        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream("刚刚的代码都有什么功能？", CodeGenTypeEnum.MULTI_FILE,379472085107392512L);
         // 阻塞等待所有数据收集完成
         List<String> result = codeStream.collectList().block();
         // 验证结果
