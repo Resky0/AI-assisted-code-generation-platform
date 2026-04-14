@@ -36,7 +36,6 @@ import java.util.List;
  * @author resky
  */
 @RestController
-@Tag(name = "用户接口")
 @RequestMapping("/user")
 public class UserController {
 

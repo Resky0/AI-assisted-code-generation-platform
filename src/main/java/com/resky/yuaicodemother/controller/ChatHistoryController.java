@@ -29,7 +29,6 @@ import java.util.List;
  * @author resky
  */
 @RestController
-@Tag(name = "对话历史接口")
 @RequestMapping("/chatHistory")
 public class ChatHistoryController {
 

@@ -41,7 +41,6 @@ import java.util.Map;
  * @author resky
  */
 @RestController
-@Tag(name = "应用接口")
 @RequestMapping("/app")
 public class AppController {
 

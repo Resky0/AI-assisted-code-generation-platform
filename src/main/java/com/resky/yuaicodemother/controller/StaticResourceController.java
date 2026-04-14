@@ -17,7 +17,6 @@ import org.springframework.web.servlet.HandlerMapping;
 import java.io.File;
 
 @RestController
-@Tag(name = "静态资源")
 @RequestMapping("/static")
 public class StaticResourceController {
 
