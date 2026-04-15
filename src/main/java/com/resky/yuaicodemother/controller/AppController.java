@@ -100,7 +100,7 @@ public class AppController {
         // 转换为 ServerSentEvent格式
         return contextFlux.map(chunk -> {
             // 将内容包装成 json对象
-            Map<String, String> wrapper = Map.of("d:", chunk);
+            Map<String, String> wrapper = Map.of("d", chunk);
             String jsonData = JSONUtil.toJsonStr(wrapper);
             return ServerSentEvent.<String>builder()
                     .data(jsonData)

@@ -10,10 +10,7 @@ import com.resky.yuaicodemother.constant.UserConstant;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.exception.ThrowUtils;
-import com.resky.yuaicodemother.model.dto.user.UserAddRequest;
-import com.resky.yuaicodemother.model.dto.user.UserQueryRequest;
-import com.resky.yuaicodemother.model.dto.user.UserRegisterRequest;
-import com.resky.yuaicodemother.model.dto.user.UserUpdateRequest;
+import com.resky.yuaicodemother.model.dto.user.*;
 import com.resky.yuaicodemother.model.vo.LoginUserVO;
 import com.resky.yuaicodemother.model.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,7 +48,7 @@ public class UserController {
      */
     @Operation(summary = "用户注册")
     @PostMapping("/register")
-    public BaseResponse<Long> register(@RequestBody UserRegisterRequest registerRequest) {
+    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest registerRequest) {
         ThrowUtils.throwIf(registerRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         String userAccount = registerRequest.getUserAccount();
         String userPassword = registerRequest.getUserPassword();
@@ -64,16 +61,16 @@ public class UserController {
     /**
      * 用户登录
      *
-     * @param registerRequest 用户登录请求类
+     * @param loginRequest 用户登录请求类
      * @param request
      * @return 脱敏用户信息
      */
     @Operation(summary = "用户登录")
     @PostMapping("/login")
-    public BaseResponse<LoginUserVO> login(@RequestBody UserRegisterRequest registerRequest, HttpServletRequest request) {
-        ThrowUtils.throwIf(registerRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
-        String userAccount = registerRequest.getUserAccount();
-        String userPassword = registerRequest.getUserPassword();
+    public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest loginRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(loginRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
+        String userAccount = loginRequest.getUserAccount();
+        String userPassword = loginRequest.getUserPassword();
         LoginUserVO loginUserVO = userService.userLogin(userAccount, userPassword, request);
         return ResultUtils.success(loginUserVO);
     }
@@ -98,7 +95,7 @@ public class UserController {
      */
     @Operation(summary = "退出登录")
     @PostMapping("/logout")
-    public BaseResponse<Boolean> logout(HttpServletRequest request) {
+    public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.OPERATION_ERROR, "请求参数为空");
         boolean isLogout = userService.userLogout(request);
         return ResultUtils.success(isLogout);
