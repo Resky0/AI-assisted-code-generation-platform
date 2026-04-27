@@ -14,7 +14,7 @@ export async function addApp(body: API.AppAddRequest, options?: { [key: string]:
   })
 }
 
-/** 此处后端没有提供注释 POST /app/admin/delete */
+/** 管理员删除应用 POST /app/admin/delete */
 export async function deleteAppByAdmin(body: API.DeleteRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/admin/delete', {
     method: 'POST',
@@ -26,7 +26,7 @@ export async function deleteAppByAdmin(body: API.DeleteRequest, options?: { [key
   })
 }
 
-/** 此处后端没有提供注释 GET /app/admin/get/vo */
+/** 管理员根据 id获取应用详情 GET /app/admin/get/vo */
 export async function getAppVoByIdByAdmin(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getAppVOByIdByAdminParams,
@@ -41,7 +41,7 @@ export async function getAppVoByIdByAdmin(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/admin/list/page/vo */
+/** 管理员分页获取应用列表 POST /app/admin/list/page/vo */
 export async function listAppVoByPageByAdmin(
   body: API.AppQueryRequest,
   options?: { [key: string]: any }
@@ -56,7 +56,7 @@ export async function listAppVoByPageByAdmin(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/admin/update */
+/** 管理员更新应用 POST /app/admin/update */
 export async function updateAppByAdmin(
   body: API.AppAdminUpdateRequest,
   options?: { [key: string]: any }
@@ -71,7 +71,7 @@ export async function updateAppByAdmin(
   })
 }
 
-/** 此处后端没有提供注释 GET /app/chat/gen/code */
+/** 用户流式生成代码 GET /app/chat/gen/code */
 export async function chatToGenCode(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.chatToGenCodeParams,
@@ -86,7 +86,7 @@ export async function chatToGenCode(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/delete */
+/** 用户删除应用 POST /app/delete */
 export async function deleteApp(body: API.DeleteRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/delete', {
     method: 'POST',
@@ -98,7 +98,7 @@ export async function deleteApp(body: API.DeleteRequest, options?: { [key: strin
   })
 }
 
-/** 此处后端没有提供注释 POST /app/deploy */
+/** 用户部署应用 POST /app/deploy */
 export async function deployApp(body: API.AppDeployRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/app/deploy', {
     method: 'POST',
@@ -110,7 +110,21 @@ export async function deployApp(body: API.AppDeployRequest, options?: { [key: st
   })
 }
 
-/** 此处后端没有提供注释 GET /app/get/vo */
+/** 此处后端没有提供注释 GET /app/download/${param0} */
+export async function downloadAppCode(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.downloadAppCodeParams,
+  options?: { [key: string]: any }
+) {
+  const { appId: param0, ...queryParams } = params
+  return request<any>(`/app/download/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
+
+/** 根据应用 id获取应用详情 GET /app/get/vo */
 export async function getAppVoById(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getAppVOByIdParams,
@@ -125,7 +139,7 @@ export async function getAppVoById(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/good/list/page/vo */
+/** 分页获取精选应用列表 POST /app/good/list/page/vo */
 export async function listGoodAppVoByPage(
   body: API.AppQueryRequest,
   options?: { [key: string]: any }
@@ -140,7 +154,7 @@ export async function listGoodAppVoByPage(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/my/list/page/vo */
+/** 分页获取当前用户创建的应用列表 POST /app/my/list/page/vo */
 export async function listMyAppVoByPage(
   body: API.AppQueryRequest,
   options?: { [key: string]: any }
@@ -155,7 +169,7 @@ export async function listMyAppVoByPage(
   })
 }
 
-/** 此处后端没有提供注释 POST /app/update */
+/** 用户更新应用 POST /app/update */
 export async function updateApp(body: API.AppUpdateRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/app/update', {
     method: 'POST',

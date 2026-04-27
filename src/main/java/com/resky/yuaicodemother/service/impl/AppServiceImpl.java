@@ -7,6 +7,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingService;
 import com.resky.yuaicodemother.constant.AppConstant;
 import com.resky.yuaicodemother.core.AiCodeGeneratorFacade;
 import com.resky.yuaicodemother.core.builder.VueProjectBuilder;
@@ -14,6 +15,7 @@ import com.resky.yuaicodemother.core.handler.StreamHandlerExecutor;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.exception.ThrowUtils;
+import com.resky.yuaicodemother.model.dto.app.AppAddRequest;
 import com.resky.yuaicodemother.model.dto.app.AppQueryRequest;
 import com.resky.yuaicodemother.model.entity.App;
 import com.resky.yuaicodemother.mapper.AppMapper;
@@ -66,6 +68,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private ScreenshotService screenshotService;
 
+    @Resource
+    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+
     /**
      * 生成代码（流式）
      *
@@ -98,6 +103,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
 
     }
+
+
+
+    @Override
+    public Long createApp(AppAddRequest appAddRequest, User loginUser) {
+        // 参数校验
+        String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
+        // 构造入库对象
+        App app = new App();
+        BeanUtil.copyProperties(appAddRequest, app);
+        app.setUserId(loginUser.getId());
+        // 应用名称暂时为 initPrompt 前 12 位
+        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 使用 AI 智能选择代码生成类型
+        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        app.setCodeGenType(selectedCodeGenType.getValue());
+        // 插入数据库
+        boolean result = this.save(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
+        return app.getId();
+    }
+
 
     /**
      * 部署应用

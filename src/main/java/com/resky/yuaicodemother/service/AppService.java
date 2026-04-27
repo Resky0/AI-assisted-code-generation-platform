@@ -2,6 +2,7 @@ package com.resky.yuaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
+import com.resky.yuaicodemother.model.dto.app.AppAddRequest;
 import com.resky.yuaicodemother.model.dto.app.AppQueryRequest;
 import com.resky.yuaicodemother.model.entity.App;
 import com.resky.yuaicodemother.model.entity.User;
@@ -25,6 +26,8 @@ public interface AppService extends IService<App> {
      * @return 生成的代码
      */
     Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser);
+
+    Long createApp(AppAddRequest appAddRequest, User loginUser);
 
     /**
      * 部署应用
