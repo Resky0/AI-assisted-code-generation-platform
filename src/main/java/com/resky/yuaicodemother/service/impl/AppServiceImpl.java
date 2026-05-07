@@ -7,6 +7,8 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.resky.yuaicodemother.ai.AiCodeGenAppNameService;
+import com.resky.yuaicodemother.ai.AiCodeGenAppNameServiceFactory;
 import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingService;
 import com.resky.yuaicodemother.constant.AppConstant;
 import com.resky.yuaicodemother.core.AiCodeGeneratorFacade;
@@ -69,6 +71,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private ScreenshotService screenshotService;
 
     @Resource
+    private AiCodeGenAppNameService aiCodeGenAppNameService;
+
+    @Resource
     private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
 
     /**
@@ -105,7 +110,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     }
 
 
-
     @Override
     public Long createApp(AppAddRequest appAddRequest, User loginUser) {
         // 参数校验
@@ -115,8 +119,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
-        // 应用名称暂时为 initPrompt 前 12 位
-        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 应用名称使用 AI 生成
+        app.setAppName(aiCodeGenAppNameService.genAppName(initPrompt));
         // 使用 AI 智能选择代码生成类型
         CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());

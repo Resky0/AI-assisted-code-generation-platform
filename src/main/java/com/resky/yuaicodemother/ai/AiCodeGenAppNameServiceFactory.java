@@ -8,23 +8,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * AI 代码生成类型路由服务工厂
+ * AI 代码生成应用标题服务工厂
  *
  * @author yupi
  */
 @Slf4j
 @Configuration
-public class AiCodeGenTypeRoutingServiceFactory {
+public class AiCodeGenAppNameServiceFactory {
 
     @Resource
     private ChatModel chatModel;
 
     /**
-     * 创建AI 代码生成类型路由服务实例
+     * 创建 AI代码生成应用标题服务实例
      */
     @Bean
-    public AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService() {
-        return AiServices.builder(AiCodeGenTypeRoutingService.class)
+    public AiCodeGenAppNameService aiCodeGenAppNameService() {
+        return AiServices.builder(AiCodeGenAppNameService.class)
                 .chatModel(chatModel)
                 .build();
     }

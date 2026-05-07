@@ -7,6 +7,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 @Configuration
 @ConfigurationProperties(prefix = "langchain4j.open-ai.chat-model")
 @Data
@@ -16,13 +18,15 @@ public class ReasoningStreamingChatModelConfig {
 
     private String apiKey;
 
+    private Duration timeout;
+
     /**
      * 推理流式模型（用于 Vue 项目生成，带工具调用）
      */
     @Bean
     public StreamingChatModel reasoningStreamingChatModel() {
         // 为了测试方便临时修改
-        final String modelName = "kimi-k2.5";
+        final String modelName = "deepseek-v4-flash";
         final int maxTokens = 16384;
         // 生产环境使用：
         // final String modelName = "deepseek-reasoner";
@@ -32,6 +36,7 @@ public class ReasoningStreamingChatModelConfig {
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .maxTokens(maxTokens)
+                .timeout(timeout)
                 .logRequests(true)
                 .logResponses(true)
                 .build();

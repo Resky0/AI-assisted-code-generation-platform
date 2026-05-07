@@ -2,7 +2,7 @@ package com.resky.yuaicodemother.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.resky.yuaicodemother.ai.tools.FileWriteTool;
+import com.resky.yuaicodemother.ai.tools.*;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
@@ -42,6 +42,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private ChatHistoryService chatHistoryService;
+
+    @Resource
+    private ToolManager toolManager;
 
     /*  结构化输出Bean--已改为流式输出
     @Bean
@@ -122,7 +125,7 @@ public class AiCodeGeneratorServiceFactory {
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
                     .streamingChatModel(reasoningStreamingChatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(new FileWriteTool())
+                    .tools(toolManager.getAllTools())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
                     ))
