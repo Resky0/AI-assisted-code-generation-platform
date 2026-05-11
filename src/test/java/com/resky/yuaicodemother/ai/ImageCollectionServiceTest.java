@@ -1,11 +1,10 @@
 package com.resky.yuaicodemother.ai;
 
+import com.resky.yuaicodemother.langgraph4j.ai.ImageCollectionService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class ImageCollectionServiceTest {

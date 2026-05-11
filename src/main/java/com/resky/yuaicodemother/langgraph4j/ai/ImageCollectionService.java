@@ -1,4 +1,4 @@
-package com.resky.yuaicodemother.ai;
+package com.resky.yuaicodemother.langgraph4j.ai;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;

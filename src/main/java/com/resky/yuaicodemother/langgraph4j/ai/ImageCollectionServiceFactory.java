@@ -1,4 +1,4 @@
-package com.resky.yuaicodemother.ai;
+package com.resky.yuaicodemother.langgraph4j.ai;
 
 import com.resky.yuaicodemother.langgraph4j.tools.ImageSearchTool;
 import com.resky.yuaicodemother.langgraph4j.tools.LogoGeneratorTool;
