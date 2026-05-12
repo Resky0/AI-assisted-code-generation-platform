@@ -10,6 +10,7 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.resky.yuaicodemother.ai.AiCodeGenAppNameService;
 import com.resky.yuaicodemother.ai.AiCodeGenAppNameServiceFactory;
 import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingService;
+import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.resky.yuaicodemother.constant.AppConstant;
 import com.resky.yuaicodemother.core.AiCodeGeneratorFacade;
 import com.resky.yuaicodemother.core.builder.VueProjectBuilder;
@@ -74,7 +75,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private AiCodeGenAppNameService aiCodeGenAppNameService;
 
     @Resource
-    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+    private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
     /**
      * 生成代码（流式）
@@ -115,6 +116,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 参数校验
         String initPrompt = appAddRequest.getInitPrompt();
         ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
+        // 使用 AI 智能选择代码生成类型（多例模式）
+        AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
+        CodeGenTypeEnum selectedCodeGenType = routingService.routeCodeGenType(initPrompt);
         // 构造入库对象
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
@@ -122,7 +126,6 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 应用名称使用 AI 生成
         app.setAppName(aiCodeGenAppNameService.genAppName(initPrompt));
         // 使用 AI 智能选择代码生成类型
-        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());
         // 插入数据库
         boolean result = this.save(app);
