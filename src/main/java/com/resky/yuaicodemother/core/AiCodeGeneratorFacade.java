@@ -8,6 +8,8 @@ import com.resky.yuaicodemother.ai.model.MultiFileCodeResult;
 import com.resky.yuaicodemother.ai.model.message.AiResponseMessage;
 import com.resky.yuaicodemother.ai.model.message.ToolExecutedMessage;
 import com.resky.yuaicodemother.ai.model.message.ToolRequestMessage;
+import com.resky.yuaicodemother.constant.AppConstant;
+import com.resky.yuaicodemother.core.builder.VueProjectBuilder;
 import com.resky.yuaicodemother.core.parser.CodeParserExecutor;
 import com.resky.yuaicodemother.core.saver.CodeFileSaverExecutor;
 import com.resky.yuaicodemother.exception.BusinessException;
@@ -32,6 +34,9 @@ public class AiCodeGeneratorFacade {
     @Resource
     private AiCodeGeneratorServiceFactory aiCodeGeneratorServiceFactory;
 
+    @Resource
+    private VueProjectBuilder vueProjectBuilder;
+
     /**
      * 统一入口，根据类型生成并保存代码
      *
@@ -39,21 +44,21 @@ public class AiCodeGeneratorFacade {
      * @param codeGenTypeEnum 生成类型
      * @return 保存的目录
      */
-    public File generateAndSaveCode(String userMessage, CodeGenTypeEnum codeGenTypeEnum,Long appId) {
+    public File generateAndSaveCode(String userMessage, CodeGenTypeEnum codeGenTypeEnum, Long appId) {
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
         // 根据 appId 获取对应的AI服务实例
-        AiCodeGeneratorService aiCodeGeneratorService=aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId);
         return switch (codeGenTypeEnum) {
             case HTML -> {
                 HtmlCodeResult htmlCodeResult = aiCodeGeneratorService.generateHtmlCode(userMessage);
-                yield CodeFileSaver.saveHtmlCodeResult(htmlCodeResult,appId);
+                yield CodeFileSaver.saveHtmlCodeResult(htmlCodeResult, appId);
 
             }
             case MULTI_FILE -> {
                 MultiFileCodeResult multiFileCodeResult = aiCodeGeneratorService.generateMultiFileCode(userMessage);
-                yield CodeFileSaver.saveMultiFileCodeResult(multiFileCodeResult,appId);
+                yield CodeFileSaver.saveMultiFileCodeResult(multiFileCodeResult, appId);
             }
 
             default -> {
@@ -76,7 +81,7 @@ public class AiCodeGeneratorFacade {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
         // 根据 appId 获取对应的AI服务实例
-        AiCodeGeneratorService aiCodeGeneratorService=aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId,codeGenType);
+        AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenType);
         return switch (codeGenType) {
             case HTML -> {
                 Flux<String> codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
@@ -88,18 +93,19 @@ public class AiCodeGeneratorFacade {
             }
             case VUE_PROJECT -> {
                 TokenStream codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(codeStream);
+                yield processTokenStream(codeStream,appId);
             }
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的生成类型");
         };
     }
+
     /**
      * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
      *
      * @param tokenStream TokenStream 对象
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream) {
+    private Flux<String> processTokenStream(TokenStream tokenStream,Long appId) {
         return Flux.create(sink -> {
             tokenStream.onPartialResponse((String partialResponse) -> {
                         AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
@@ -114,6 +120,9 @@ public class AiCodeGeneratorFacade {
                         sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
                     })
                     .onCompleteResponse((ChatResponse response) -> {
+                        // 异步构造 Vue 项目
+                        String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
+                        vueProjectBuilder.buildProjectAsync(projectPath);
                         sink.complete();
                     })
                     .onError((Throwable error) -> {
