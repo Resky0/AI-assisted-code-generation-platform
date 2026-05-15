@@ -105,7 +105,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         chatHistoryService.addChatMessage(appId, userMessage, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
         // 6. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
-        // 7. 收集 AI 响应内容并在完成后记录到对话历史
+        // 7.使用 AI 生成应用名称
+        app.setAppName(aiCodeGenAppNameService.genAppName(userMessage));
+        this.updateById(app);
+        // 8. 收集 AI 响应内容并在完成后记录到对话历史
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
 
     }
@@ -123,8 +126,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
-        // 应用名称使用 AI 生成
-        app.setAppName(aiCodeGenAppNameService.genAppName(initPrompt));
+        // 应用名称先使用占位，等代码生成结束后利用AI生成
+        app.setAppName("新应用");
         // 使用 AI 智能选择代码生成类型
         app.setCodeGenType(selectedCodeGenType.getValue());
         // 插入数据库

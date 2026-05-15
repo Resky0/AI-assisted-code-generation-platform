@@ -2,6 +2,8 @@ package com.resky.yuaicodemother.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.resky.yuaicodemother.ai.guardrail.PromptSafetyInputGuardrail;
+import com.resky.yuaicodemother.ai.guardrail.RetryOutputGuardrail;
 import com.resky.yuaicodemother.ai.tools.*;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
@@ -130,6 +132,9 @@ public class AiCodeGeneratorServiceFactory {
                         .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                                 toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
                         ))
+                        .inputGuardrails(new PromptSafetyInputGuardrail())// 添加输入护轨
+//                        .outputGuardrails(new RetryOutputGuardrail())// 添加输出护轨
+                        .maxSequentialToolsInvocations(20)// 最多连续调用 20 次工具
                         .build();
             }
             case HTML, MULTI_FILE -> {
@@ -139,6 +144,9 @@ public class AiCodeGeneratorServiceFactory {
                         .chatModel(chatModel)
                         .streamingChatModel(openAiStreamingChatModel)
                         .chatMemory(chatMemory)
+                        .inputGuardrails(new PromptSafetyInputGuardrail())// 添加输入护轨
+//                        .outputGuardrails(new RetryOutputGuardrail())// 添加输出护轨
+                        .maxSequentialToolsInvocations(20)// 最多连续调用 20 次工具
                         .build();
             }
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR,

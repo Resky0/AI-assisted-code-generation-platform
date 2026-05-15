@@ -54,6 +54,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 加密
         String encryptPassword = getEncryptPassword(userPassword);
         // 插入数据
+        //todo：默认头像设置
         User user = User.builder()
                 .userAccount(userAccount)
                 .userPassword(encryptPassword)

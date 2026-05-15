@@ -17,6 +17,8 @@ import com.resky.yuaicodemother.exception.ThrowUtils;
 import com.resky.yuaicodemother.model.dto.app.*;
 import com.resky.yuaicodemother.model.entity.User;
 import com.resky.yuaicodemother.model.vo.AppVO;
+import com.resky.yuaicodemother.ratelimiter.annotation.RateLimit;
+import com.resky.yuaicodemother.ratelimiter.enums.RateLimitType;
 import com.resky.yuaicodemother.service.ProjectDownloadService;
 import com.resky.yuaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -81,6 +83,7 @@ public class AppController {
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "用户流式生成代码")
+    @RateLimit(limitType = RateLimitType.USER,rate = 5,rateInterval = 60,message = "AI 对话请求过于频繁，请稍后再试")
     public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId, @RequestParam String message, HttpServletRequest request) {
         // 参数校验
         ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR, "应用 id 不能为空");
