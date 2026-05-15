@@ -54,12 +54,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 加密
         String encryptPassword = getEncryptPassword(userPassword);
         // 插入数据
-        //todo：默认头像设置
         User user = User.builder()
                 .userAccount(userAccount)
                 .userPassword(encryptPassword)
                 .userName("无名")
                 .userRole(UserRoleEnum.USER.getValue())
+                .userAvatar("https://gd-hbimg.huaban.com/fdc6182522dccb56f8dc4f2eb8829638aa22e29c164b-0UyDlb_fw658")
                 .build();
         boolean saveResult = this.save(user);
         ThrowUtils.throwIf(!saveResult, ErrorCode.OPERATION_ERROR, "注册失败");
