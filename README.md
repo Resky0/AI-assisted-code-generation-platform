@@ -4,8 +4,6 @@
 
 ## 项目演示
 
-> 以下位置预留给项目演示图片，可按需手动插入截图或 GIF。
-
 ### 首页与应用广场
 
 ![image-20260527202037798](https://raw.githubusercontent.com/Resky0/MdPicture/img/img/image-20260527202037798.png)
