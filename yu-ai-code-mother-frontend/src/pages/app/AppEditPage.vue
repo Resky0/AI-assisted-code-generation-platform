@@ -320,4 +320,112 @@ onMounted(() => {
   background: #fafafa;
   font-weight: 500;
 }
+
+#appEditPage {
+  color: var(--console-text);
+  padding: 32px 24px 64px;
+}
+
+.page-header {
+  padding: 18px 20px;
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.page-header h1 {
+  color: var(--console-text);
+}
+
+.edit-container :deep(.ant-card) {
+  border-radius: 8px;
+  box-shadow: var(--console-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.cover-preview {
+  border-color: rgba(34, 211, 238, 0.18);
+  background: rgba(2, 6, 23, 0.5);
+}
+
+.form-tip {
+  color: var(--console-text-soft);
+}
+
+:deep(.ant-card-head) {
+  background: rgba(15, 23, 42, 0.98);
+}
+
+:deep(.ant-descriptions-view) {
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+:deep(.ant-descriptions-item-label) {
+  color: var(--console-text);
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.88);
+}
+
+:deep(.ant-descriptions-item-content) {
+  color: var(--console-text-soft);
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.56);
+}
+
+:deep(.ant-input-number) {
+  border-color: rgba(125, 211, 252, 0.34) !important;
+  background:
+    linear-gradient(180deg, rgba(8, 47, 73, 0.34), rgba(2, 6, 23, 0.82)),
+    rgba(2, 6, 23, 0.78) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+:deep(.ant-input-number:hover),
+:deep(.ant-input-number-focused) {
+  border-color: rgba(34, 211, 238, 0.78) !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14) !important;
+}
+
+:deep(.ant-input-number-input) {
+  color: #f8fafc !important;
+  font-weight: 700;
+  caret-color: var(--console-cyan);
+}
+
+:deep(.ant-input-number-handler-wrap) {
+  border-left-color: rgba(125, 211, 252, 0.18);
+  background: rgba(15, 23, 42, 0.86);
+}
+
+:deep(.ant-input-number-handler) {
+  border-color: rgba(125, 211, 252, 0.14);
+}
+
+:deep(.ant-input-number-handler-up-inner),
+:deep(.ant-input-number-handler-down-inner) {
+  color: #bae6fd;
+}
+
+:deep(.ant-input-number-handler:hover .ant-input-number-handler-up-inner),
+:deep(.ant-input-number-handler:hover .ant-input-number-handler-down-inner) {
+  color: var(--console-cyan);
+}
+
+:deep(.ant-form-item-extra) {
+  margin-top: 6px;
+  color: #bae6fd;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+:deep(.ant-form-item-extra::before) {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--console-cyan);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.72);
+  vertical-align: 1px;
+}
 </style>

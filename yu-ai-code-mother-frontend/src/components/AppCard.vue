@@ -146,4 +146,84 @@ const handleViewWork = () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.app-card {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.9)),
+    linear-gradient(135deg, rgba(34, 211, 238, 0.08), transparent 42%);
+  box-shadow: var(--console-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.app-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.22), transparent 28%, transparent 72%, rgba(52, 211, 153, 0.14));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.app-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(34, 211, 238, 0.42);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42), 0 0 28px rgba(34, 211, 238, 0.12);
+}
+
+.app-card:hover::before {
+  opacity: 1;
+}
+
+.app-card--featured {
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
+.app-preview {
+  height: 184px;
+  background:
+    linear-gradient(135deg, rgba(8, 47, 73, 0.52), rgba(2, 6, 23, 0.86)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.08) 0,
+      rgba(34, 211, 238, 0.08) 1px,
+      transparent 1px,
+      transparent 20px
+    );
+}
+
+.app-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.18) 70%, rgba(2, 6, 23, 0.64) 100%);
+}
+
+.app-placeholder {
+  color: rgba(34, 211, 238, 0.68);
+  text-shadow: 0 0 26px rgba(34, 211, 238, 0.28);
+}
+
+.app-overlay {
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.app-info {
+  position: relative;
+  padding: 16px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.app-title {
+  color: var(--console-text);
+}
+
+.app-author {
+  color: var(--console-text-soft);
+}
 </style>

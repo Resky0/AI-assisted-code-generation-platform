@@ -31,4 +31,14 @@ withDefaults(defineProps<Props>(), {
   font-size: 14px;
   color: #1a1a1a;
 }
+
+.user-name {
+  color: var(--console-text);
+  font-weight: 600;
+}
+
+.user-info :deep(.ant-avatar) {
+  color: #082f49;
+  background: linear-gradient(135deg, #f0f9ff 0%, #bae6fd 52%, #bbf7d0 100%);
+}
 </style>

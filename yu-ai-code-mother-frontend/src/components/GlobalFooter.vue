@@ -3,12 +3,12 @@
     <div class="footer-content">
       <p class="copyright">
         <a
-          href="https://www.codefather.cn"
+          href="https://www.resky.top"
           target="_blank"
           rel="noopener noreferrer"
           class="author-link"
         >
-          编程导航原创项目 by 程序员鱼皮
+          AI 全栈开发--Resky
         </a>
       </p>
     </div>
@@ -33,5 +33,27 @@
   margin: 0;
   color: #666;
   font-size: 14px;
+}
+
+.footer {
+  margin-top: 0;
+  color: var(--console-text-soft);
+  border-top: 1px solid rgba(34, 211, 238, 0.14);
+  background:
+    linear-gradient(180deg, rgba(7, 11, 19, 0.72), rgba(4, 7, 13, 0.94)),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.08), transparent 50%, rgba(52, 211, 153, 0.06));
+  backdrop-filter: blur(16px);
+}
+
+.copyright {
+  color: var(--console-text-soft);
+}
+
+.author-link {
+  color: var(--console-cyan);
+}
+
+.author-link:hover {
+  color: var(--console-green);
 }
 </style>

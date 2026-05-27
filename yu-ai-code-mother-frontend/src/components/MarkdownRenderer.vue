@@ -214,4 +214,70 @@ const renderedMarkdown = computed(() => {
   color: #6f42c1;
   font-weight: 600;
 }
+
+.markdown-content {
+  color: #dbeafe;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  color: #f8fafc;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2) {
+  border-bottom-color: rgba(125, 211, 252, 0.28);
+}
+
+.markdown-content :deep(p),
+.markdown-content :deep(li),
+.markdown-content :deep(td) {
+  color: #dbeafe;
+}
+
+.markdown-content :deep(strong) {
+  color: #ffffff;
+}
+
+.markdown-content :deep(em) {
+  color: #bae6fd;
+}
+
+.markdown-content :deep(blockquote) {
+  color: #c7d2fe;
+  border-left-color: #22d3ee;
+  background-color: rgba(8, 47, 73, 0.42);
+}
+
+.markdown-content :deep(:not(pre) > code) {
+  color: #a7f3d0;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  background-color: rgba(6, 78, 59, 0.34);
+}
+
+.markdown-content :deep(table th),
+.markdown-content :deep(table td) {
+  border-color: rgba(125, 211, 252, 0.2);
+}
+
+.markdown-content :deep(table th) {
+  color: #f8fafc;
+  background-color: rgba(14, 116, 144, 0.35);
+}
+
+.markdown-content :deep(table tr:nth-child(even)) {
+  background-color: rgba(15, 23, 42, 0.56);
+}
+
+.markdown-content :deep(a) {
+  color: #67e8f9;
+}
+
+.markdown-content :deep(hr) {
+  border-top-color: rgba(125, 211, 252, 0.24);
+}
 </style>

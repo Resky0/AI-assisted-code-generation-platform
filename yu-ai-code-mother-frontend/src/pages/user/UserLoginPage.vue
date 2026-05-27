@@ -85,4 +85,30 @@ const handleSubmit = async (values: any) => {
   font-size: 13px;
   margin-bottom: 16px;
 }
+
+#userLoginPage {
+  max-width: 480px;
+  margin: 64px auto 96px;
+  padding: 32px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 8px;
+  color: var(--console-text);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.9)),
+    linear-gradient(135deg, rgba(34, 211, 238, 0.1), transparent 44%);
+  box-shadow: var(--console-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.title {
+  color: var(--console-text);
+  font-weight: 700;
+}
+
+.desc {
+  color: var(--console-text-soft);
+}
+
+.tips {
+  color: var(--console-text-soft);
+}
 </style>

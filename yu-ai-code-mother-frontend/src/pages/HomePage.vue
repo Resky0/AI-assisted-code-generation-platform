@@ -573,4 +573,165 @@ onMounted(() => {
     justify-content: center;
   }
 }
+
+#homePage {
+  background:
+    radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 28%), rgba(34, 211, 238, 0.14), transparent 34%),
+    radial-gradient(circle at 18% 18%, rgba(37, 99, 235, 0.18), transparent 32%),
+    radial-gradient(circle at 82% 8%, rgba(52, 211, 153, 0.11), transparent 28%),
+    linear-gradient(180deg, #08111f 0%, #070b13 48%, #04070d 100%);
+  color: var(--console-text);
+}
+
+#homePage::before {
+  opacity: 0.78;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.1) 1px, transparent 1px),
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-size:
+    112px 112px,
+    112px 112px,
+    28px 28px,
+    28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95), transparent 82%);
+}
+
+#homePage::after {
+  background:
+    radial-gradient(
+      620px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(34, 211, 238, 0.16) 0%,
+      rgba(37, 99, 235, 0.08) 38%,
+      transparent 76%
+    ),
+    linear-gradient(120deg, transparent 22%, rgba(34, 211, 238, 0.08) 50%, transparent 74%);
+}
+
+.container {
+  max-width: 1220px;
+  padding: 28px 20px 48px;
+}
+
+.hero-section {
+  color: var(--console-text);
+  padding: 84px 0 54px;
+}
+
+.hero-section::before {
+  opacity: 0.88;
+  background:
+    radial-gradient(ellipse 760px 320px at center, rgba(34, 211, 238, 0.14) 0%, transparent 72%),
+    linear-gradient(90deg, transparent 18%, rgba(52, 211, 153, 0.08) 50%, transparent 82%);
+}
+
+.hero-title {
+  background: linear-gradient(135deg, #e0f2fe 0%, #22d3ee 40%, #34d399 100%);
+  background-size: 160% 160%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 24px rgba(34, 211, 238, 0.2));
+  letter-spacing: 0;
+}
+
+.hero-description {
+  color: var(--console-text-soft);
+  opacity: 1;
+}
+
+.input-section {
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.82)),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.18), transparent 28%, transparent 72%, rgba(52, 211, 153, 0.12));
+  box-shadow: var(--console-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.input-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 20px;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--console-cyan), transparent);
+}
+
+.prompt-input {
+  border: 0;
+  border-radius: 10px;
+  color: var(--console-text);
+  background: transparent;
+  box-shadow: none;
+  caret-color: var(--console-cyan);
+}
+
+.prompt-input:focus {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.input-actions {
+  bottom: 14px;
+  right: 14px;
+}
+
+.quick-actions {
+  margin-bottom: 64px;
+}
+
+.quick-actions :deep(.ant-btn) {
+  height: 36px;
+  border-radius: 6px;
+  color: var(--console-text-soft);
+  border-color: rgba(34, 211, 238, 0.18);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.quick-actions :deep(.ant-btn::before) {
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.2), transparent);
+}
+
+.quick-actions :deep(.ant-btn:hover) {
+  color: var(--console-cyan);
+  border-color: rgba(34, 211, 238, 0.58);
+  background: rgba(8, 47, 73, 0.54);
+  box-shadow: 0 12px 28px rgba(34, 211, 238, 0.16);
+}
+
+.section {
+  position: relative;
+  margin-bottom: 68px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--console-text);
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.section-title::before {
+  content: '';
+  width: 7px;
+  height: 24px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--console-cyan), var(--console-green));
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.52);
+}
+
+.app-grid,
+.featured-grid {
+  gap: 22px;
+}
+
+.pagination-wrapper {
+  padding: 12px 0 0;
+}
 </style>

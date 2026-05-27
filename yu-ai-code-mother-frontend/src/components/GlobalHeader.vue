@@ -6,7 +6,7 @@
         <RouterLink to="/">
           <div class="header-left">
             <img class="logo" src="@/assets/logo.png" alt="Logo" />
-            <h1 class="site-title">鱼皮应用生成</h1>
+            <h1 class="site-title">AI应用生成</h1>
           </div>
         </RouterLink>
       </a-col>
@@ -84,8 +84,8 @@ const originItems = [
   },
   {
     key: 'others',
-    label: h('a', { href: 'https://www.codefather.cn', target: '_blank' }, '编程导航'),
-    title: '编程导航',
+    label: h('a', { href: 'https://www.resky.top', target: '_blank' }, '关于作者'),
+    title: '关于作者',
   },
 ]
 
@@ -156,5 +156,77 @@ const doLogout = async () => {
 
 .ant-menu-horizontal {
   border-bottom: none !important;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.16);
+  background:
+    linear-gradient(90deg, rgba(7, 11, 19, 0.94), rgba(15, 23, 42, 0.92)),
+    linear-gradient(180deg, rgba(34, 211, 238, 0.08), transparent);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.header-left {
+  height: 64px;
+}
+
+.logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 211, 238, 0.26);
+  background: rgba(15, 23, 42, 0.78);
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.16);
+}
+
+.site-title {
+  color: var(--console-text);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.24);
+}
+
+:deep(.ant-menu) {
+  color: var(--console-text-soft);
+  background: transparent !important;
+}
+
+:deep(.ant-menu-horizontal) {
+  line-height: 64px;
+}
+
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-item),
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-submenu) {
+  color: var(--console-text-soft);
+}
+
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-item:hover),
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-submenu:hover),
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-item-selected) {
+  color: var(--console-cyan);
+}
+
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-item-selected::after),
+:deep(.ant-menu-light.ant-menu-horizontal > .ant-menu-item:hover::after) {
+  border-bottom-color: var(--console-cyan);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.72);
+}
+
+.user-login-status {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  color: var(--console-text-soft);
+}
+
+:deep(.ant-space) {
+  color: var(--console-text-soft);
 }
 </style>

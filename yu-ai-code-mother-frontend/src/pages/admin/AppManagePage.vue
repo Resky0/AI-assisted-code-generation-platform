@@ -306,4 +306,51 @@ const deleteApp = async (id: number | undefined) => {
 :deep(.ant-table-tbody > tr > td) {
   vertical-align: middle;
 }
+
+#appManagePage {
+  margin: 24px;
+  padding: 24px;
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  border-radius: 8px;
+  color: var(--console-text);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.9)),
+    linear-gradient(135deg, rgba(34, 211, 238, 0.08), transparent 42%);
+  box-shadow: var(--console-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.no-cover {
+  color: var(--console-text-soft);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(2, 6, 23, 0.66);
+}
+
+.text-gray {
+  color: var(--console-muted);
+}
+
+.featured-btn {
+  border-color: rgba(245, 158, 11, 0.72);
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+}
+
+.featured-btn:hover {
+  border-color: var(--console-amber);
+  background: rgba(245, 158, 11, 0.26);
+  color: #fff7ed;
+}
+
+:deep(.ant-divider) {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+:deep(.user-info) {
+  color: var(--console-text);
+}
+
+:deep(.user-info .user-name) {
+  color: #e0f2fe;
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.18);
+}
 </style>
