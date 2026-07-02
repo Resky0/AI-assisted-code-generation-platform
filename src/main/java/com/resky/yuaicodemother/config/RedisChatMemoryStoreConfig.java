@@ -12,16 +12,20 @@ import org.springframework.context.annotation.Configuration;
 public class RedisChatMemoryStoreConfig {
     private String host;
     private int port;
+    private String username;
     private String password;
     private long ttl;
 
     @Bean
     public RedisChatMemoryStore redisChatMemoryStore() {
-        return RedisChatMemoryStore.builder()
+        RedisChatMemoryStore.Builder builder = RedisChatMemoryStore.builder()
                 .host(host)
                 .port(port)
-                .password(password)
-                .ttl(ttl)
-                .build();
+                .ttl(ttl);
+        if (password != null && !password.isBlank()) {
+            builder.user(username == null || username.isBlank() ? "default" : username)
+                    .password(password);
+        }
+        return builder.build();
     }
 }

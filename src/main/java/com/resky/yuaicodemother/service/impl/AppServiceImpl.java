@@ -33,6 +33,7 @@ import com.resky.yuaicodemother.service.ScreenshotService;
 import com.resky.yuaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -106,7 +107,9 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 6. 调用 AI 生成代码（流式）
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
         // 7.使用 AI 生成应用名称
-        app.setAppName(aiCodeGenAppNameService.genAppName(userMessage));
+        if ("新应用".equals(app.getAppName())) {
+            app.setAppName(aiCodeGenAppNameService.genAppName(userMessage));
+        }
         this.updateById(app);
         // 8. 收集 AI 响应内容并在完成后记录到对话历史
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
@@ -137,6 +140,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         return app.getId();
     }
 
+    @Value("${code.deploy-host:http://localhost}")
+    private String deployHost;
 
     /**
      * 部署应用
@@ -199,7 +204,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         boolean updateResult = updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新应用部署信息失败");
         // 10. 构建应用访问 URL
-        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        String appDeployUrl = String.format("%s/%s/", deployHost, deployKey);
         // 11. 异步生成截图并更新应用封面
         generateAppScreenshotAsync(appId, appDeployUrl);
         return appDeployUrl;

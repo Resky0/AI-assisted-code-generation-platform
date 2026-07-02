@@ -229,6 +229,10 @@ import DeploySuccessModal from '@/components/DeploySuccessModal.vue'
 import aiAvatar from '@/assets/aiAvatar.png'
 import { API_BASE_URL, getStaticPreviewUrl } from '@/config/env'
 import { VisualEditor, type ElementInfo } from '@/utils/visualEditor'
+import {
+  createWriteFileTypewriter,
+  type TypewriterController,
+} from '@/utils/typewriterQueue'
 
 import {
   CloudUploadOutlined,
@@ -259,6 +263,8 @@ const messages = ref<Message[]>([])
 const userInput = ref('')
 const isGenerating = ref(false)
 const messagesContainer = ref<HTMLElement>()
+const activeEventSources = new Set<EventSource>()
+const activeTypewriters = new Set<TypewriterController>()
 
 // 对话历史相关
 const loadingHistory = ref(false)
@@ -479,6 +485,24 @@ const sendMessage = async () => {
 const generateCode = async (userMessage: string, aiMessageIndex: number) => {
   let eventSource: EventSource | null = null
   let streamCompleted = false
+  const typewriter: TypewriterController = createWriteFileTypewriter({
+    append: (content) => {
+      const targetMessage = messages.value[aiMessageIndex]
+      if (!targetMessage) return
+      targetMessage.content += content
+      targetMessage.loading = false
+      scrollToBottom()
+    },
+    onDispose: () => activeTypewriters.delete(typewriter),
+  })
+  activeTypewriters.add(typewriter)
+
+  const closeEventSource = () => {
+    if (!eventSource) return
+    eventSource.close()
+    activeEventSources.delete(eventSource)
+    eventSource = null
+  }
 
   try {
     // 获取 axios 配置的 baseURL
@@ -496,8 +520,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
     eventSource = new EventSource(url, {
       withCredentials: true,
     })
-
-    let fullContent = ''
+    activeEventSources.add(eventSource)
 
     // 处理接收到的消息
     eventSource.onmessage = function (event) {
@@ -508,15 +531,15 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
         const parsed = JSON.parse(event.data)
         const content = parsed.d
 
-        // 拼接内容
+        // writeFile 的代码进入显示队列，其他内容仍会立即显示
         if (content !== undefined && content !== null) {
-          fullContent += content
-          messages.value[aiMessageIndex].content = fullContent
-          messages.value[aiMessageIndex].loading = false
-          scrollToBottom()
+          typewriter.enqueue(String(content))
         }
       } catch (error) {
         console.error('解析消息失败:', error)
+        streamCompleted = true
+        typewriter.cancel()
+        closeEventSource()
         handleError(error, aiMessageIndex)
       }
     }
@@ -527,7 +550,8 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
 
       streamCompleted = true
       isGenerating.value = false
-      eventSource?.close()
+      typewriter.complete()
+      closeEventSource()
 
       // 延迟更新预览，确保后端已完成处理
       setTimeout(async () => {
@@ -551,9 +575,13 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
 
         streamCompleted = true
         isGenerating.value = false
-        eventSource?.close()
+        typewriter.cancel()
+        closeEventSource()
       } catch (parseError) {
         console.error('解析错误事件失败:', parseError, '原始数据:', event.data)
+        streamCompleted = true
+        typewriter.cancel()
+        closeEventSource()
         handleError(new Error('服务器返回错误'), aiMessageIndex)
       }
     })
@@ -565,18 +593,24 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
       if (eventSource?.readyState === EventSource.CONNECTING) {
         streamCompleted = true
         isGenerating.value = false
-        eventSource?.close()
+        typewriter.complete()
+        closeEventSource()
 
         setTimeout(async () => {
           await fetchAppInfo()
           updatePreview()
         }, 1000)
       } else {
+        streamCompleted = true
+        typewriter.cancel()
+        closeEventSource()
         handleError(new Error('SSE连接错误'), aiMessageIndex)
       }
     }
   } catch (error) {
     console.error('创建 EventSource 失败：', error)
+    typewriter.cancel()
+    closeEventSource()
     handleError(error, aiMessageIndex)
   }
 }
@@ -764,7 +798,10 @@ onMounted(() => {
 
 // 清理资源
 onUnmounted(() => {
-  // EventSource 会在组件卸载时自动清理
+  activeEventSources.forEach((eventSource) => eventSource.close())
+  activeEventSources.clear()
+  activeTypewriters.forEach((typewriter) => typewriter.cancel())
+  activeTypewriters.clear()
 })
 </script>
 
@@ -1165,8 +1202,46 @@ onUnmounted(() => {
 }
 
 .selected-element-alert {
-  border-color: rgba(34, 211, 238, 0.24);
-  background: rgba(8, 47, 73, 0.36);
+  color: #e6f7ff;
+  border-color: rgba(34, 211, 238, 0.52);
+  background: rgba(8, 47, 73, 0.78);
+  box-shadow: inset 0 1px 0 rgba(186, 230, 253, 0.08);
+}
+
+.selected-element-alert :deep(.ant-alert-message) {
+  width: 100%;
+  color: #e6f7ff;
+}
+
+.selected-element-alert :deep(.ant-alert-close-icon) {
+  color: #bae6fd;
+}
+
+.selected-element-alert :deep(.ant-alert-close-icon:hover) {
+  color: #ffffff;
+}
+
+.selected-element-info,
+.element-details {
+  color: #dbeafe;
+}
+
+.element-tag {
+  color: #67e8f9;
+}
+
+.element-id {
+  color: #86efac;
+}
+
+.element-class {
+  color: #fde68a;
+}
+
+.element-selector-code {
+  color: #f8fafc;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  background: rgba(2, 6, 23, 0.68);
 }
 
 .header-right :deep(.ant-btn-default) {

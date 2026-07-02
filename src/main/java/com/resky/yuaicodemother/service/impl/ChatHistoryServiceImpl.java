@@ -6,6 +6,7 @@ import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.resky.yuaicodemother.constant.UserConstant;
+import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.exception.ThrowUtils;
 import com.resky.yuaicodemother.model.dto.chatHistory.ChatHistoryQueryRequest;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,6 +37,13 @@ import java.util.List;
 @Service
 @Slf4j
 public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatHistory> implements ChatHistoryService {
+
+    /**
+     * 聊天消息入库上限（按 UTF-8 编码后的字节数计算）。
+     * MEDIUMTEXT 最大约 16 MiB，这里预留一半空间给数据库协议和后续字段扩展。
+     */
+    private static final int MAX_MESSAGE_BYTES = 8 * 1024 * 1024;
+
     @Lazy
     @Resource
     private AppService appService;
@@ -99,6 +108,15 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
         ThrowUtils.throwIf(message == null, ErrorCode.PARAMS_ERROR, "消息不能为空");
         ThrowUtils.throwIf(messageType == null, ErrorCode.PARAMS_ERROR, "消息类型不能为空");
         ThrowUtils.throwIf(userId == null, ErrorCode.PARAMS_ERROR, "用户 ID不能为空");
+
+        // MySQL 文本类型按字节限制容量，不能用 String.length() 判断中文或 Emoji 消息大小
+        int messageBytes = message.getBytes(StandardCharsets.UTF_8).length;
+        if (messageBytes > MAX_MESSAGE_BYTES) {
+            log.warn("拒绝保存超长聊天消息，appId: {}, userId: {}, messageType: {}, messageBytes: {}, maxBytes: {}",
+                    appId, userId, messageType, messageBytes, MAX_MESSAGE_BYTES);
+            throw new BusinessException(ErrorCode.OPERATION_ERROR,
+                    "聊天消息过长，UTF-8 编码后不能超过 8 MiB");
+        }
 
         // 校验消息类型是否合法
         ChatHistoryMessageTypeEnum historyMessageTypeEnum = ChatHistoryMessageTypeEnum.getEnumByValue(messageType);

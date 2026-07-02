@@ -26,7 +26,7 @@ public class WebScreenshotUtils {
     private static final WebDriver webDriver;
     // 使用相对路径指向 resources 目录下的 ChromeDriver
     private static final String CHROME_DRIVER_PATH =
-            System.getProperty("user.dir") + "/src/main/resources/chromedriver-win64/chromedriver.exe";
+            System.getProperty("user.dir") + "/src/main/resources/chromedriver-linux64/chromedriver";
     static {
         final int DEFAULT_WIDTH = 1600;
         final int DEFAULT_HEIGHT = 900;
