@@ -34,7 +34,7 @@ public class StreamingChatModelConfig {
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
-                .maxTokens(maxTokens)
+                .maxTokens(Math.min(maxTokens == null ? 8192 : maxTokens, 8192))
                 .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)

@@ -19,6 +19,8 @@ spring:
       port: 6379
       password:
       database: 1
+  profiles:
+    active: local
 server:
   port: 8123
   servlet:
@@ -27,6 +29,30 @@ server:
     session:
       cookie:
         max-age: 2592000
+ai:
+  cost-control:
+    enabled: true
+    enforcement-enabled: ${AI_COST_ENFORCEMENT_ENABLED:true}
+    timezone: Asia/Shanghai
+    initial-calls-per-day: 1
+    edit-calls-per-day: 3
+    user-tokens-per-day: 80000
+    global-tokens-per-day: 300000
+    initial-trace-tokens: 40000
+    edit-trace-tokens: 15000
+    initial-tool-rounds: 10
+    edit-tool-rounds: 5
+    global-concurrency: 2
+    user-concurrency: 1
+    lease-time: 12m
+    max-execution-time: 10m
+    key-ttl: 48h
+    initial-prompt-max-chars: 1000
+    edit-prompt-max-chars: 4000
+    max-generated-files: 12
+    registration-per-hour: 3
+    registration-per-day: 5
+    ai-requests-per-ip-per-day: 10
 # springdoc-openapi
 springdoc:
   group-configs:
@@ -61,7 +87,7 @@ langchain4j:
       base-url: https://api.deepseek.com
       api-key: <Your API Key>
       model-name: deepseek-v4-flash
-      max-tokens: 32768
+      max-tokens: 8192
       temperature: 0.1
       log-requests: true
       log-responses: true
@@ -70,6 +96,7 @@ langchain4j:
       base-url: https://api.deepseek.com
       api-key: <Your API Key>
       model-name: deepseek-v4-flash
+      max-tokens: 128
       log-requests: true
       log-responses: true
 

@@ -1,6 +1,7 @@
 package com.resky.yuaicodemother.ai;
 
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.Result;
 
 public interface AiCodeGenAppNameService {
     /**
@@ -9,5 +10,5 @@ public interface AiCodeGenAppNameService {
      * @return  appName
      */
     @SystemMessage(fromResource = "prompt/codegen-appname-summary-prompt.txt")
-    String genAppName(String userMessage);
+    Result<String> genAppName(String userMessage);
 }

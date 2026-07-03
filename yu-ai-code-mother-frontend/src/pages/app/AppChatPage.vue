@@ -110,6 +110,14 @@
 
         <!-- 用户消息输入框 -->
         <div class="input-container">
+          <div v-if="isOwner && quota" class="quota-bar" :class="{ unavailable: !quota.serviceAvailable }">
+            <span v-if="quota.serviceAvailable">
+              今日剩余：首次 {{ quota.admin ? '不限' : quota.initialRemaining }} 次 · 修改
+              {{ quota.admin ? '不限' : quota.editRemaining }} 次 · Token
+              {{ quota.admin ? '个人不限额' : formatToken(quota.tokenRemaining) }}
+            </span>
+            <span v-else>AI 额度服务暂不可用，当前不能启动新任务</span>
+          </div>
           <div class="input-wrapper">
             <a-tooltip v-if="!isOwner" title="无法在别人的作品下对话哦~" placement="top">
               <a-textarea
@@ -222,6 +230,7 @@ import {
 import { listAppChatHistory } from '@/api/chatHistoryController'
 import { CodeGenTypeEnum, formatCodeGenType } from '@/utils/codeGenTypes'
 import request from '@/request'
+import { getAiQuota, type AiQuota } from '@/api/aiCostController'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import AppDetailModal from '@/components/AppDetailModal.vue'
@@ -262,9 +271,21 @@ interface Message {
 const messages = ref<Message[]>([])
 const userInput = ref('')
 const isGenerating = ref(false)
+const quota = ref<AiQuota>()
 const messagesContainer = ref<HTMLElement>()
 const activeEventSources = new Set<EventSource>()
 const activeTypewriters = new Set<TypewriterController>()
+
+const formatToken = (value: number) => new Intl.NumberFormat('zh-CN').format(value)
+const fetchQuota = async () => {
+  if (!loginUserStore.loginUser.id) return
+  try {
+    const res = await getAiQuota()
+    if (res.data.code === 0) quota.value = res.data.data
+  } catch {
+    quota.value = quota.value ? { ...quota.value, serviceAvailable: false } : undefined
+  }
+}
 
 // 对话历史相关
 const loadingHistory = ref(false)
@@ -550,6 +571,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
 
       streamCompleted = true
       isGenerating.value = false
+      fetchQuota()
       typewriter.complete()
       closeEventSource()
 
@@ -575,6 +597,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
 
         streamCompleted = true
         isGenerating.value = false
+        fetchQuota()
         typewriter.cancel()
         closeEventSource()
       } catch (parseError) {
@@ -593,6 +616,7 @@ const generateCode = async (userMessage: string, aiMessageIndex: number) => {
       if (eventSource?.readyState === EventSource.CONNECTING) {
         streamCompleted = true
         isGenerating.value = false
+        fetchQuota()
         typewriter.complete()
         closeEventSource()
 
@@ -622,6 +646,7 @@ const handleError = (error: unknown, aiMessageIndex: number) => {
   messages.value[aiMessageIndex].loading = false
   message.error('生成失败，请重试')
   isGenerating.value = false
+  fetchQuota()
 }
 
 // 更新预览
@@ -789,6 +814,7 @@ const getInputPlaceholder = () => {
 // 页面加载时获取应用信息
 onMounted(() => {
   fetchAppInfo()
+  fetchQuota()
 
   // 监听 iframe 消息
   window.addEventListener('message', (event) => {
@@ -930,6 +956,22 @@ onUnmounted(() => {
 .input-container {
   padding: 16px;
   background: white;
+}
+
+.quota-bar {
+  margin-bottom: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 7px;
+  color: #d9f8ff;
+  background: rgba(8, 47, 73, 0.58);
+  font-size: 13px;
+}
+
+.quota-bar.unavailable {
+  color: #ffd8a8;
+  border-color: rgba(251, 146, 60, 0.45);
+  background: rgba(124, 45, 18, 0.45);
 }
 
 .input-wrapper {

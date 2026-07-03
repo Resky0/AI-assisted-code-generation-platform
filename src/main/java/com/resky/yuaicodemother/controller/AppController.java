@@ -21,6 +21,7 @@ import com.resky.yuaicodemother.ratelimiter.annotation.RateLimit;
 import com.resky.yuaicodemother.ratelimiter.enums.RateLimitType;
 import com.resky.yuaicodemother.service.ProjectDownloadService;
 import com.resky.yuaicodemother.service.UserService;
+import com.resky.yuaicodemother.utils.ClientIpUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -91,7 +92,7 @@ public class AppController {
         // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
         // 调用服务生成代码（流式）
-        Flux<String> contextFlux = appService.chatToGenCode(appId, message, loginUser);
+        Flux<String> contextFlux = appService.chatToGenCode(appId, message, loginUser, ClientIpUtils.getClientIp(request));
         // 转换为 ServerSentEvent格式
         return contextFlux.map(chunk -> {
             // 将内容包装成 json对象

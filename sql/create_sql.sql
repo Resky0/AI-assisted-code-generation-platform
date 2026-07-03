@@ -35,6 +35,7 @@ create table app
     cover        varchar(512)                       null comment '应用封面',
     initPrompt   text                               null comment '应用初始化的 prompt',
     codeGenType  varchar(64)                        null comment '代码生成类型（枚举）',
+    generationStatus varchar(32) default 'INIT'     not null comment 'INIT/GENERATING/READY/FAILED',
     deployKey    varchar(64)                        null comment '部署标识',
     deployedTime datetime                           null comment '部署时间',
     priority     int      default 0                 not null comment '优先级',
@@ -63,3 +64,29 @@ create table chat_history
     INDEX idx_createTime (createTime),             -- 提升基于时间的查询性能
     INDEX idx_appId_createTime (appId, createTime) -- 游标查询核心索引
 ) comment '对话历史' collate = utf8mb4_unicode_ci;
+
+create table if not exists ai_model_usage
+(
+    id bigint auto_increment primary key,
+    traceId varchar(64) not null,
+    userId bigint not null,
+    appId bigint null,
+    callType varchar(32) not null,
+    modelName varchar(128) null,
+    inputTokens bigint default 0 not null,
+    outputTokens bigint default 0 not null,
+    totalTokens bigint default 0 not null,
+    toolRounds int default 0 not null,
+    status varchar(32) not null,
+    usageSource varchar(32) default 'UNAVAILABLE' not null,
+    errorMessage varchar(1000) null,
+    startedTime datetime not null,
+    finishedTime datetime null,
+    latencyMs bigint null,
+    createTime datetime default CURRENT_TIMESTAMP not null,
+    updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    unique key uk_traceId (traceId),
+    index idx_userId_createTime (userId, createTime),
+    index idx_appId_createTime (appId, createTime),
+    index idx_callType_status_createTime (callType, status, createTime)
+) comment 'AI 模型工作流用量' collate = utf8mb4_unicode_ci;

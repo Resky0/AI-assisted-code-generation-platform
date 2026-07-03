@@ -24,7 +24,7 @@ public class AiCodeGenAppNameServiceFactory {
      */
     public AiCodeGenAppNameService createAiCodeGenAppNameService() {
         // 动态获取多例的路由 ChatModel，支持并发
-        ChatModel chatModel = SpringContextUtil.getBean("routingChatModelPrototype", ChatModel.class);
+        ChatModel chatModel = SpringContextUtil.getBean("appNameChatModelPrototype", ChatModel.class);
         return AiServices.builder(AiCodeGenAppNameService.class)
                 .chatModel(chatModel)
                 .build();

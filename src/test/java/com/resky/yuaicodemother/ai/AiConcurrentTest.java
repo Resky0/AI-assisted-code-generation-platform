@@ -26,7 +26,7 @@ public class AiConcurrentTest {
             final int index = i + 1;
             threads[i] = Thread.ofVirtual().start(() -> {
                 AiCodeGenAppNameService service = routingServiceFactory.createAiCodeGenAppNameService();
-                String result = service.genAppName(prompt);
+                String result = service.genAppName(prompt).content();
                 log.info("线程 {}: {} -> {}", index, prompt, result);
             });
         }

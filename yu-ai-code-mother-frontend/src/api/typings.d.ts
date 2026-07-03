@@ -24,6 +24,7 @@ declare namespace API {
     cover?: string
     initPrompt?: string
     codeGenType?: string
+    generationStatus?: 'INIT' | 'GENERATING' | 'READY' | 'FAILED'
     deployKey?: string
     priority?: number
     userId?: number
@@ -40,6 +41,7 @@ declare namespace API {
     cover?: string
     initPrompt?: string
     codeGenType?: string
+    generationStatus?: 'INIT' | 'GENERATING' | 'READY' | 'FAILED'
     deployKey?: string
     deployedTime?: string
     priority?: number

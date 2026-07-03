@@ -2,11 +2,13 @@ package dev.langchain4j.service;
 
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.service.tool.ToolExecution;
 
 import java.util.List;
+import java.time.Duration;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -50,6 +52,14 @@ public interface TokenStream {
      * @return token stream instance used to configure or start stream processing
      */
     TokenStream onToolExecuted(Consumer<ToolExecution> toolExecuteHandler);
+
+    TokenStream onRoundUsage(BiConsumer<TokenUsage, Integer> roundUsageHandler);
+
+    TokenStream maxTotalTokens(long maxTotalTokens);
+
+    TokenStream maxToolRounds(int maxToolRounds);
+
+    TokenStream maxDuration(Duration maxDuration);
 
     /**
      * The provided handler will be invoked when a language model finishes streaming a response.

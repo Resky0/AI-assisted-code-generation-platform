@@ -14,6 +14,12 @@ import com.resky.yuaicodemother.core.parser.CodeParserExecutor;
 import com.resky.yuaicodemother.core.saver.CodeFileSaverExecutor;
 import com.resky.yuaicodemother.exception.BusinessException;
 import com.resky.yuaicodemother.exception.ErrorCode;
+import com.resky.yuaicodemother.exception.AiBudgetExceededException;
+import com.resky.yuaicodemother.model.dto.aicost.AiCostReservation;
+import com.resky.yuaicodemother.model.enums.AiUsageStatusEnum;
+import com.resky.yuaicodemother.service.AiCostControlService;
+import com.resky.yuaicodemother.config.AiCostControlProperties;
+import dev.langchain4j.service.TokenStreamLimitException;
 import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.service.TokenStream;
@@ -36,6 +42,12 @@ public class AiCodeGeneratorFacade {
 
     @Resource
     private VueProjectBuilder vueProjectBuilder;
+
+    @Resource
+    private AiCostControlService aiCostControlService;
+
+    @Resource
+    private AiCostControlProperties costControlProperties;
 
     /**
      * 统一入口，根据类型生成并保存代码
@@ -76,7 +88,8 @@ public class AiCodeGeneratorFacade {
      * @param codeGenType 生成类型
      * @return 保存的目录
      */
-    public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenType, Long appId) {
+    public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenType, Long appId,
+                                                   AiCostReservation reservation) {
         if (codeGenType == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成类型为空");
         }
@@ -84,19 +97,25 @@ public class AiCodeGeneratorFacade {
         AiCodeGeneratorService aiCodeGeneratorService = aiCodeGeneratorServiceFactory.getAiCodeGeneratorService(appId, codeGenType);
         return switch (codeGenType) {
             case HTML -> {
-                Flux<String> codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
-                yield processCodeStream(codeStream, CodeGenTypeEnum.HTML, appId);
+                TokenStream codeStream = aiCodeGeneratorService.generateHtmlCodeStream(userMessage);
+                Flux<String> textStream = processTextTokenStream(codeStream, reservation);
+                yield processCodeStream(textStream, CodeGenTypeEnum.HTML, appId, reservation);
             }
             case MULTI_FILE -> {
-                Flux<String> codeStream = aiCodeGeneratorService.generateMultiFileCodeStream(userMessage);
-                yield processCodeStream(codeStream, CodeGenTypeEnum.MULTI_FILE, appId);
+                TokenStream codeStream = aiCodeGeneratorService.generateMultiFileCodeStream(userMessage);
+                Flux<String> textStream = processTextTokenStream(codeStream, reservation);
+                yield processCodeStream(textStream, CodeGenTypeEnum.MULTI_FILE, appId, reservation);
             }
             case VUE_PROJECT -> {
                 TokenStream codeStream = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                yield processTokenStream(codeStream,appId);
+                yield processTokenStream(codeStream, appId, reservation);
             }
             default -> throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的生成类型");
         };
+    }
+
+    public Flux<String> generateAndSaveCodeStream(String userMessage, CodeGenTypeEnum codeGenType, Long appId) {
+        return generateAndSaveCodeStream(userMessage, codeGenType, appId, null);
     }
 
     /**
@@ -105,7 +124,7 @@ public class AiCodeGeneratorFacade {
      * @param tokenStream TokenStream 对象
      * @return Flux<String> 流式响应
      */
-    private Flux<String> processTokenStream(TokenStream tokenStream,Long appId) {
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId, AiCostReservation reservation) {
         return Flux.create(sink -> {
             tokenStream.onPartialResponse((String partialResponse) -> {
                         AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
@@ -119,18 +138,62 @@ public class AiCodeGeneratorFacade {
                         ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
                         sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
                     })
+                    .onRoundUsage((usage, toolRounds) -> {
+                        if (reservation != null) aiCostControlService.reportUsage(reservation, usage, toolRounds);
+                    })
+                    .maxTotalTokens(reservation == null ? Long.MAX_VALUE : reservation.getMaxTokens())
+                    .maxToolRounds(reservation == null ? Integer.MAX_VALUE : reservation.getMaxToolRounds())
+                    .maxDuration(costControlProperties.getMaxExecutionTime())
                     .onCompleteResponse((ChatResponse response) -> {
                         // 异步构造 Vue 项目
                         String projectPath = AppConstant.CODE_OUTPUT_ROOT_DIR + "/vue_project_" + appId;
                         vueProjectBuilder.buildProjectAsync(projectPath);
+                        if (reservation != null) aiCostControlService.complete(reservation);
                         sink.complete();
                     })
                     .onError((Throwable error) -> {
-                        error.printStackTrace();
-                        sink.error(error);
+                        if (reservation != null && (error instanceof AiBudgetExceededException || error instanceof TokenStreamLimitException)) {
+                            reservation.setBudgetExceeded(true);
+                            aiCostControlService.fail(reservation, error, AiUsageStatusEnum.BUDGET_EXCEEDED);
+                            sink.next(JSONUtil.toJsonStr(new AiResponseMessage("\n\n任务已达到本次额度上限，已保留当前生成结果。")));
+                            sink.complete();
+                        } else {
+                            if (reservation != null) aiCostControlService.fail(reservation, error, AiUsageStatusEnum.FAILED);
+                            sink.error(error);
+                        }
                     })
                     .start();
         });
+    }
+
+    private Flux<String> processTextTokenStream(TokenStream tokenStream, AiCostReservation reservation) {
+        return Flux.create(sink -> tokenStream
+                .onPartialResponse(sink::next)
+                .onRoundUsage((usage, toolRounds) -> {
+                    if (reservation != null) aiCostControlService.reportUsage(reservation, usage, toolRounds);
+                })
+                .maxTotalTokens(reservation == null ? Long.MAX_VALUE : reservation.getMaxTokens())
+                .maxToolRounds(reservation == null ? Integer.MAX_VALUE : reservation.getMaxToolRounds())
+                .maxDuration(costControlProperties.getMaxExecutionTime())
+                .onCompleteResponse(response -> {
+                    if (reservation != null) aiCostControlService.complete(reservation);
+                    sink.complete();
+                })
+                .onError(error -> {
+                    if (reservation != null && (error instanceof AiBudgetExceededException
+                            || error instanceof TokenStreamLimitException)) {
+                        reservation.setBudgetExceeded(true);
+                        aiCostControlService.fail(reservation, error, AiUsageStatusEnum.BUDGET_EXCEEDED);
+                        sink.next("\n\n任务已达到本次额度上限，已停止继续生成。");
+                        sink.complete();
+                    } else {
+                        if (reservation != null) {
+                            aiCostControlService.fail(reservation, error, AiUsageStatusEnum.FAILED);
+                        }
+                        sink.error(error);
+                    }
+                })
+                .start());
     }
 
 
@@ -141,13 +204,18 @@ public class AiCodeGeneratorFacade {
      * @param codeGenType 代码生成类型
      * @return 流式响应
      */
-    private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenTypeEnum codeGenType, Long appId) {
+    private Flux<String> processCodeStream(Flux<String> codeStream, CodeGenTypeEnum codeGenType, Long appId,
+                                           AiCostReservation reservation) {
         StringBuilder codeBuilder = new StringBuilder();
         return codeStream.doOnNext(chunk -> {
                     // 实时收集代码片段
                     codeBuilder.append(chunk);
                 })
                 .doOnComplete(() -> {
+                    if (reservation != null && reservation.isBudgetExceeded()) {
+                        log.info("任务达到预算上限，跳过保存不完整的 {} 代码，appId={}", codeGenType, appId);
+                        return;
+                    }
                     // 流式返回完成后保存代码
                     try {
                         String completeCode = codeBuilder.toString();

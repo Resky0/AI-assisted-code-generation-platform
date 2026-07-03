@@ -17,6 +17,8 @@ import dev.langchain4j.service.tool.ToolExecutor;
 
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -43,6 +45,10 @@ public class AiServiceTokenStream implements TokenStream {
     private Consumer<Throwable> errorHandler;
     private BiConsumer<Integer, ToolExecutionRequest> partialToolExecutionRequestHandler;
     private BiConsumer<Integer, ToolExecutionRequest> completeToolExecutionRequestHandler;
+    private BiConsumer<TokenUsage, Integer> roundUsageHandler;
+    private long maxTotalTokens = Long.MAX_VALUE;
+    private int maxToolRounds = Integer.MAX_VALUE;
+    private Duration maxDuration = Duration.ofDays(1);
 
     private int onPartialResponseInvoked;
     private int onCompleteResponseInvoked;
@@ -103,6 +109,30 @@ public class AiServiceTokenStream implements TokenStream {
     }
 
     @Override
+    public TokenStream onRoundUsage(BiConsumer<TokenUsage, Integer> roundUsageHandler) {
+        this.roundUsageHandler = roundUsageHandler;
+        return this;
+    }
+
+    @Override
+    public TokenStream maxTotalTokens(long maxTotalTokens) {
+        this.maxTotalTokens = maxTotalTokens;
+        return this;
+    }
+
+    @Override
+    public TokenStream maxToolRounds(int maxToolRounds) {
+        this.maxToolRounds = maxToolRounds;
+        return this;
+    }
+
+    @Override
+    public TokenStream maxDuration(Duration maxDuration) {
+        this.maxDuration = ensureNotNull(maxDuration, "maxDuration");
+        return this;
+    }
+
+    @Override
     public TokenStream onCompleteResponse(Consumer<ChatResponse> completionHandler) {
         this.completeResponseHandler = completionHandler;
         this.onCompleteResponseInvoked++;
@@ -152,7 +182,13 @@ public class AiServiceTokenStream implements TokenStream {
                 toolSpecifications,
                 toolExecutors,
                 commonGuardrailParams,
-                methodKey);
+                methodKey,
+                roundUsageHandler,
+                maxTotalTokens,
+                maxToolRounds,
+                maxDuration,
+                Instant.now(),
+                0);
 
         if (contentsHandler != null && retrievedContents != null) {
             contentsHandler.accept(retrievedContents);

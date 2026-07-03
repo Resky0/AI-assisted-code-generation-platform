@@ -83,6 +83,11 @@ const originItems = [
     title: '应用管理',
   },
   {
+    key: '/admin/aiUsage',
+    label: 'AI 用量',
+    title: 'AI 用量',
+  },
+  {
     key: 'others',
     label: h('a', { href: 'https://www.resky.top', target: '_blank' }, '关于作者'),
     title: '关于作者',

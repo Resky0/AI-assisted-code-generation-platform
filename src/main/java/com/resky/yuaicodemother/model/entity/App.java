@@ -60,6 +60,9 @@ public class App implements Serializable {
     @Column("codeGenType")
     private String codeGenType;
 
+    @Column("generationStatus")
+    private String generationStatus;
+
     /**
      * 部署标识
      */

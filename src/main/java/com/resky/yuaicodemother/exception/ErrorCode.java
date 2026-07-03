@@ -6,6 +6,9 @@ import lombok.Getter;
 public enum ErrorCode {
 
     SUCCESS(0, "ok"),
+    AI_QUOTA_EXCEEDED(42901, "AI quota exhausted"),
+    AI_BUDGET_EXCEEDED(42902, "AI token budget exhausted"),
+    AI_BUSY(42903, "AI service is busy"),
     PARAMS_ERROR(40000, "请求参数错误"),
     NOT_LOGIN_ERROR(40100, "未登录"),
     NO_AUTH_ERROR(40101, "无权限"),

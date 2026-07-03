@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import com.resky.yuaicodemother.model.entity.User;
 import com.resky.yuaicodemother.service.UserService;
+import com.resky.yuaicodemother.service.AiCostControlService;
+import com.resky.yuaicodemother.utils.ClientIpUtils;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -39,6 +41,9 @@ public class UserController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private AiCostControlService aiCostControlService;
+
 
     /**
      * 用户注册
@@ -48,7 +53,8 @@ public class UserController {
      */
     @Operation(summary = "用户注册")
     @PostMapping("/register")
-    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest registerRequest) {
+    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest registerRequest, HttpServletRequest request) {
+        aiCostControlService.checkRegistration(ClientIpUtils.getClientIp(request));
         ThrowUtils.throwIf(registerRequest == null, ErrorCode.PARAMS_ERROR, "请求参数为空");
         String userAccount = registerRequest.getUserAccount();
         String userPassword = registerRequest.getUserPassword();
@@ -196,4 +202,3 @@ public class UserController {
         return ResultUtils.success(userVOPage);
     }
 }
-

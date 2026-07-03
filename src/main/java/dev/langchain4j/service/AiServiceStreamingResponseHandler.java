@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -57,6 +59,12 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
     private final Map<String, ToolExecutor> toolExecutors;
     private final List<String> responseBuffer = new ArrayList<>();
     private final boolean hasOutputGuardrails;
+    private final BiConsumer<TokenUsage, Integer> roundUsageHandler;
+    private final long maxTotalTokens;
+    private final int maxToolRounds;
+    private final Duration maxDuration;
+    private final Instant startedAt;
+    private final int toolRounds;
 
     AiServiceStreamingResponseHandler(
             ChatExecutor chatExecutor,
@@ -73,7 +81,13 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
             List<ToolSpecification> toolSpecifications,
             Map<String, ToolExecutor> toolExecutors,
             GuardrailRequestParams commonGuardrailParams,
-            Object methodKey) {
+            Object methodKey,
+            BiConsumer<TokenUsage, Integer> roundUsageHandler,
+            long maxTotalTokens,
+            int maxToolRounds,
+            Duration maxDuration,
+            Instant startedAt,
+            int toolRounds) {
         this.chatExecutor = ensureNotNull(chatExecutor, "chatExecutor");
         this.context = ensureNotNull(context, "context");
         this.memoryId = ensureNotNull(memoryId, "memoryId");
@@ -93,6 +107,12 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         this.toolSpecifications = copy(toolSpecifications);
         this.toolExecutors = copy(toolExecutors);
         this.hasOutputGuardrails = context.guardrailService().hasOutputGuardrails(methodKey);
+        this.roundUsageHandler = roundUsageHandler;
+        this.maxTotalTokens = maxTotalTokens;
+        this.maxToolRounds = maxToolRounds;
+        this.maxDuration = maxDuration;
+        this.startedAt = startedAt;
+        this.toolRounds = toolRounds;
     }
 
     @Override
@@ -116,6 +136,17 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
         AiMessage aiMessage = completeResponse.aiMessage();
         addToMemory(aiMessage);
 
+        TokenUsage cumulativeUsage = TokenUsage.sum(tokenUsage, completeResponse.metadata().tokenUsage());
+        int completedToolRounds = toolRounds + (aiMessage.hasToolExecutionRequests() ? 1 : 0);
+        Throwable usageError = null;
+        if (roundUsageHandler != null) {
+            try {
+                roundUsageHandler.accept(cumulativeUsage, completedToolRounds);
+            } catch (Throwable error) {
+                usageError = error;
+            }
+        }
+
         if (aiMessage.hasToolExecutionRequests()) {
             for (ToolExecutionRequest toolExecutionRequest : aiMessage.toolExecutionRequests()) {
                 String toolName = toolExecutionRequest.name();
@@ -134,6 +165,12 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 }
             }
 
+            Throwable limitError = usageError != null ? usageError : checkLimits(cumulativeUsage, completedToolRounds);
+            if (limitError != null) {
+                onError(limitError);
+                return;
+            }
+
             ChatRequest chatRequest = ChatRequest.builder()
                     .messages(messagesToSend(memoryId))
                     .toolSpecifications(toolSpecifications)
@@ -150,14 +187,25 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                     completeResponseHandler,
                     errorHandler,
                     temporaryMemory,
-                    TokenUsage.sum(tokenUsage, completeResponse.metadata().tokenUsage()),
+                    cumulativeUsage,
                     toolSpecifications,
                     toolExecutors,
                     commonGuardrailParams,
-                    methodKey);
+                    methodKey,
+                    roundUsageHandler,
+                    maxTotalTokens,
+                    maxToolRounds,
+                    maxDuration,
+                    startedAt,
+                    completedToolRounds);
 
             context.streamingChatModel.chat(chatRequest, handler);
         } else {
+            Throwable limitError = usageError != null ? usageError : checkLimits(cumulativeUsage, completedToolRounds);
+            if (limitError != null) {
+                onError(limitError);
+                return;
+            }
             if (completeResponseHandler != null) {
                 ChatResponse finalChatResponse = ChatResponse.builder()
                         .aiMessage(aiMessage)
@@ -197,6 +245,11 @@ class AiServiceStreamingResponseHandler implements StreamingChatResponseHandler 
                 completeResponseHandler.accept(finalChatResponse);
             }
         }
+    }
+
+    private Throwable checkLimits(TokenUsage usage, int completedToolRounds) {
+        return TokenStreamLimitPolicy.violation(usage, completedToolRounds,
+                Duration.between(startedAt, Instant.now()), maxTotalTokens, maxToolRounds, maxDuration);
     }
 
     private ChatMemory getMemory() {

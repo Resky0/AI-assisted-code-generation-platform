@@ -37,7 +37,24 @@ public class RoutingAiModelConfig {
                 .apiKey(apiKey)
                 .modelName(modelName)
                 .baseUrl(baseUrl)
-                .maxTokens(maxTokens)
+                .maxTokens(Math.min(maxTokens == null ? 128 : maxTokens, 128))
+                .temperature(temperature)
+                .logRequests(logRequests)
+                .logResponses(logResponses)
+                .build();
+    }
+
+    /**
+     * 应用命名允许更充足的推理空间，但仍保持较低输出上限。
+     */
+    @Bean
+    @Scope("prototype")
+    public ChatModel appNameChatModelPrototype() {
+        return OpenAiChatModel.builder()
+                .apiKey(apiKey)
+                .modelName(modelName)
+                .baseUrl(baseUrl)
+                .maxTokens(256)
                 .temperature(temperature)
                 .logRequests(logRequests)
                 .logResponses(logResponses)

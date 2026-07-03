@@ -12,6 +12,7 @@ import com.resky.yuaicodemother.ai.AiCodeGenAppNameServiceFactory;
 import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingService;
 import com.resky.yuaicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.resky.yuaicodemother.constant.AppConstant;
+import com.resky.yuaicodemother.config.AiCostControlProperties;
 import com.resky.yuaicodemother.core.AiCodeGeneratorFacade;
 import com.resky.yuaicodemother.core.builder.VueProjectBuilder;
 import com.resky.yuaicodemother.core.handler.StreamHandlerExecutor;
@@ -20,14 +21,19 @@ import com.resky.yuaicodemother.exception.ErrorCode;
 import com.resky.yuaicodemother.exception.ThrowUtils;
 import com.resky.yuaicodemother.model.dto.app.AppAddRequest;
 import com.resky.yuaicodemother.model.dto.app.AppQueryRequest;
+import com.resky.yuaicodemother.model.dto.aicost.AiCostReservation;
 import com.resky.yuaicodemother.model.entity.App;
 import com.resky.yuaicodemother.mapper.AppMapper;
 import com.resky.yuaicodemother.model.entity.User;
 import com.resky.yuaicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
+import com.resky.yuaicodemother.model.enums.AppGenerationStatusEnum;
+import com.resky.yuaicodemother.model.enums.AiUsageCallTypeEnum;
+import com.resky.yuaicodemother.model.enums.AiUsageStatusEnum;
 import com.resky.yuaicodemother.model.vo.AppVO;
 import com.resky.yuaicodemother.model.vo.UserVO;
 import com.resky.yuaicodemother.service.AppService;
+import com.resky.yuaicodemother.service.AiCostControlService;
 import com.resky.yuaicodemother.service.ChatHistoryService;
 import com.resky.yuaicodemother.service.ScreenshotService;
 import com.resky.yuaicodemother.service.UserService;
@@ -36,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import dev.langchain4j.service.Result;
 
 import java.io.File;
 import java.io.Serializable;
@@ -78,6 +85,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
 
+    @Resource
+    private AiCostControlService aiCostControlService;
+
+    @Resource
+    private AiCostControlProperties costControlProperties;
+
     /**
      * 生成代码（流式）
      *
@@ -87,7 +100,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
      * @return 生成的代码
      */
     @Override
-    public Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser) {
+    public Flux<String> chatToGenCode(Long appId, String userMessage, User loginUser, String clientIp) {
         // 1.参数校验
         ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR, "应用 ID不能为空");
         ThrowUtils.throwIf(userMessage == null, ErrorCode.PARAMS_ERROR, "用户提示词不能为空");
@@ -97,22 +110,46 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         // 3.验证用户是否有权限访问该应用，仅本人可以生成代码
         ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无访问权限");
         // 4.获取应用的生成类型
-        String codeGenType = app.getCodeGenType();
-        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
-        if (codeGenTypeEnum == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的生成类型");
+        boolean initial = !AppGenerationStatusEnum.READY.name().equals(app.getGenerationStatus());
+        int maxChars = initial ? costControlProperties.getInitialPromptMaxChars()
+                : costControlProperties.getEditPromptMaxChars();
+        ThrowUtils.throwIf(userMessage.length() > maxChars, ErrorCode.PARAMS_ERROR,
+                "Prompt is too long (max " + maxChars + " characters)");
+        // 必须先原子预占额度，再进行 AI 路由，避免额度不足时仍消耗路由 token
+        AiCostReservation reservation = aiCostControlService.reserve(loginUser, appId, initial, clientIp);
+        try {
+            CodeGenTypeEnum codeGenTypeEnum = resolveCodeGenType(app, userMessage, loginUser);
+            app.setGenerationStatus(AppGenerationStatusEnum.GENERATING.name());
+            updateById(app);
+            // 5. 通过校验后，添加用户消息到对话历史
+            chatHistoryService.addChatMessage(appId, userMessage, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
+            // 6. 调用 AI 生成代码（流式）
+            Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId, reservation);
+            // 7.使用 AI 生成应用名称
+            if ("新应用".equals(app.getAppName())) {
+                Result<String> nameResult;
+                try {
+                    nameResult = aiCodeGenAppNameService.genAppName(userMessage);
+                } catch (RuntimeException error) {
+                    aiCostControlService.recordStandalone(loginUser, appId, AiUsageCallTypeEnum.APP_NAME,
+                            "routing-model", null, AiUsageStatusEnum.FAILED, error);
+                    throw error;
+                }
+                app.setAppName(nameResult.content());
+                aiCostControlService.recordStandalone(loginUser, appId, AiUsageCallTypeEnum.APP_NAME,
+                        "routing-model", nameResult.tokenUsage(), AiUsageStatusEnum.SUCCESS, null);
+            }
+            this.updateById(app);
+            // 8. 收集 AI 响应内容并在完成后记录到对话历史
+            return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum)
+                    .doOnComplete(() -> updateGenerationStatus(appId, reservation.isBudgetExceeded()
+                            ? AppGenerationStatusEnum.FAILED : AppGenerationStatusEnum.READY))
+                    .doOnError(error -> updateGenerationStatus(appId, AppGenerationStatusEnum.FAILED));
+        } catch (RuntimeException error) {
+            aiCostControlService.fail(reservation, error, AiUsageStatusEnum.FAILED);
+            updateGenerationStatus(appId, AppGenerationStatusEnum.FAILED);
+            throw error;
         }
-        // 5. 通过校验后，添加用户消息到对话历史
-        chatHistoryService.addChatMessage(appId, userMessage, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 6. 调用 AI 生成代码（流式）
-        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(userMessage, codeGenTypeEnum, appId);
-        // 7.使用 AI 生成应用名称
-        if ("新应用".equals(app.getAppName())) {
-            app.setAppName(aiCodeGenAppNameService.genAppName(userMessage));
-        }
-        this.updateById(app);
-        // 8. 收集 AI 响应内容并在完成后记录到对话历史
-        return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
 
     }
 
@@ -121,23 +158,57 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     public Long createApp(AppAddRequest appAddRequest, User loginUser) {
         // 参数校验
         String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtils.throwIf(initPrompt != null && initPrompt.length() > costControlProperties.getInitialPromptMaxChars(),
+                ErrorCode.PARAMS_ERROR,
+                "Initial prompt max length is " + costControlProperties.getInitialPromptMaxChars() + " characters");
         ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
-        // 使用 AI 智能选择代码生成类型（多例模式）
-        AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
-        CodeGenTypeEnum selectedCodeGenType = routingService.routeCodeGenType(initPrompt);
         // 构造入库对象
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
         // 应用名称先使用占位，等代码生成结束后利用AI生成
         app.setAppName("新应用");
-        // 使用 AI 智能选择代码生成类型
-        app.setCodeGenType(selectedCodeGenType.getValue());
+        // 路由延迟到首次生成且额度预占成功之后，创建应用本身不调用模型
+        app.setCodeGenType(null);
+        app.setGenerationStatus(AppGenerationStatusEnum.INIT.name());
         // 插入数据库
         boolean result = this.save(app);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
+        log.info("应用创建成功，ID: {}，等待首次生成时进行类型路由", app.getId());
         return app.getId();
+    }
+
+    private CodeGenTypeEnum resolveCodeGenType(App app, String userMessage, User loginUser) {
+        CodeGenTypeEnum existingType = CodeGenTypeEnum.getEnumByValue(app.getCodeGenType());
+        if (existingType != null) {
+            return existingType;
+        }
+        if (StrUtil.isNotBlank(app.getCodeGenType())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的生成类型");
+        }
+        String routingPrompt = StrUtil.isNotBlank(app.getInitPrompt()) ? app.getInitPrompt() : userMessage;
+        AiCodeGenTypeRoutingService routingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
+        Result<CodeGenTypeEnum> routingResult;
+        try {
+            routingResult = routingService.routeCodeGenType(routingPrompt);
+        } catch (RuntimeException error) {
+            aiCostControlService.recordStandalone(loginUser, app.getId(), AiUsageCallTypeEnum.ROUTING,
+                    "routing-model", null, AiUsageStatusEnum.FAILED, error);
+            throw error;
+        }
+        CodeGenTypeEnum selectedType = routingResult.content();
+        app.setCodeGenType(selectedType.getValue());
+        updateById(app);
+        aiCostControlService.recordStandalone(loginUser, app.getId(), AiUsageCallTypeEnum.ROUTING,
+                "routing-model", routingResult.tokenUsage(), AiUsageStatusEnum.SUCCESS, null);
+        return selectedType;
+    }
+
+    private void updateGenerationStatus(Long appId, AppGenerationStatusEnum status) {
+        App update = new App();
+        update.setId(appId);
+        update.setGenerationStatus(status.name());
+        updateById(update);
     }
 
     @Value("${code.deploy-host:http://localhost}")

@@ -2,6 +2,7 @@ package com.resky.yuaicodemother.ai;
 
 import com.resky.yuaicodemother.model.enums.CodeGenTypeEnum;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.Result;
 
 /**
  * AI代码生成类型智能路由服务
@@ -18,5 +19,5 @@ public interface AiCodeGenTypeRoutingService {
      * @return 推荐的代码生成类型
      */
     @SystemMessage(fromResource = "prompt/codegen-routing-system-prompt.txt")
-    CodeGenTypeEnum routeCodeGenType(String userPrompt);
+    Result<CodeGenTypeEnum> routeCodeGenType(String userPrompt);
 }
